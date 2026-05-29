@@ -1,0 +1,36 @@
+name: CI workflow
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Build Docker image
+        run: docker build -t doordash-copycat:latest .
+
+      - name: Run Docker container
+        run: docker run --name doordash-copycat-container -d -p 8080:8080 doordash-copycat:latest
+
+      - name: Get list of running containers
+        run: docker ps
+
+      - name: Wait 10 seconds for container to be ready
+        run: sleep 10
+
+      - name: Testing / endpoint
+        run: curl -X GET http://localhost:8080/ || exit 1
+      
+      - name: Testing /status endpoint
+        run: curl -X GET http://localhost:8080/health/ || exit 1
+      
+      - name: Stop Docker container
+        run: docker stop doordash-copycat-container
+      
+      - name: Remove Docker container
+        run: docker rm doordash-copycat-container
